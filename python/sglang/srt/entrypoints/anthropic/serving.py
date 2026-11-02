@@ -595,10 +595,14 @@ class AnthropicServing:
                     "equivalent hard-cap knob — the budget is not enforced",
                     anthropic_request.thinking.budget_tokens,
                 )
-            # Claude 4.7's ``adaptive`` is treated identically to ``enabled``
-            # because the local backend has no auto-throttle equivalent.
-            # Anything other than ``disabled`` enables reasoning.
+            # ``adaptive`` acts as ``enabled`` (the backend has no auto-throttle),
+            # except without a reasoning parser, where the model cannot think.
             enabled = anthropic_request.thinking.type != "disabled"
+            if (
+                anthropic_request.thinking.type == "adaptive"
+                and not self.openai_serving_chat.reasoning_parser
+            ):
+                enabled = False
             if anthropic_request.thinking.display == "omitted":
                 # Anthropic 4.7 spec: keep reasoning ON but hide reasoning
                 # text from the client. The OpenAI streaming pipeline has
